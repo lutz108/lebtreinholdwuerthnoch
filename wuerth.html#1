@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Lebt Reinhold Würth noch?</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            background-color: #f0f2f5;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .clickable-text {
+            font-size: 1.4rem;
+            color: #0056b3;
+            cursor: pointer;
+            text-decoration: underline;
+            font-weight: 500;
+        }
+        #result {
+            margin-top: 2rem;
+            font-size: 2.2rem;
+            font-weight: 800;
+            min-height: 1.2em;
+        }
+        .date-info {
+            margin-top: 10px;
+            color: #666;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="clickable-text" onclick="checkStatus()">lebt Reinhold Würth noch?</div>
+    <div id="result"></div>
+    <div id="date-info" class="date-info"></div>
+</div>
+
+<script>
+    async function checkStatus() {
+        const resultDiv = document.getElementById('result');
+        const dateInfo = document.getElementById('date-info');
+        
+        resultDiv.innerText = "Abfrage läuft...";
+        dateInfo.innerText = "";
+
+        //const url = `https://de.wikipedia.org/w/api.php?action=parse&page=Reinhold_Würth&prop=wikitext&format=json&origin=*`;
+        const url = `https://de.wikipedia.org/w/api.php?action=parse&page=Reinhold_Würth&prop=wikitext&format=json&origin=*`;
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            const wikitext = data.parse.wikitext["*"];
+
+            // Regex Erklärung:
+            // STERBEDATUM\s*=\s* -> Sucht nach "STERBEDATUM =", ignoriert Leerzeichen
+            // ([^|}\n]+)             -> Sucht nach Inhalten, die KEIN | } oder Zeilenumbruch sind
+            const deathMatch = wikitext.match(/STERBEDATUM\s*=\s*([^|}\n]+)/i);
+
+            // Wir prüfen, ob ein Match existiert UND ob er nicht nur aus Leerzeichen besteht
+            const deathDate = deathMatch ? deathMatch[1].trim() : "";
+
+            if (deathDate !== "") {
+                resultDiv.innerText = "zum Glück nicht mehr";
+                resultDiv.style.color = "#e74c3c";
+                dateInfo.innerText = "Verstorben am: " + deathDate;
+            } else {
+                resultDiv.innerText = "leider ja";
+                resultDiv.style.color = "#27ae60";
+                dateInfo.innerText = "Kein Sterbedatum in den Personendaten hinterlegt.";
+            }
+
+        } catch (error) {
+            resultDiv.innerText = "Fehler";
+            dateInfo.innerText = "Wikipedia konnte nicht geladen werden.";
+            console.error(error);
+        }
+    }
+</script>
+
+</body>
+</html>

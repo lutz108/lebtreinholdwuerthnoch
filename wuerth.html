@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Status Check Reinhold Würth</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; justify-content: center; align-items: center; 
+            height: 100vh; margin: 0; background-color: #f0f2f5;
+        }
+        .container {
+            text-align: center; background: white; padding: 3rem;
+            border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 420px;
+        }
+        .clickable-text {
+            font-size: 1.4rem; color: #0056b3; cursor: pointer;
+            text-decoration: underline; font-weight: 500; margin-bottom: 20px;
+        }
+
+        #status-image {
+            width: 200px; height: 200px; 
+            object-fit: contain;
+            margin: 20px auto; 
+            display: none; 
+            /* Wichtig: Transition für das finale Einrasten */
+            transition: transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Die Rotations-Klasse */
+        .rotating {
+            display: block !important;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        #result { font-size: 1.8rem; font-weight: 800; margin-top: 20px; }
+        .date-info { color: #666; font-size: 1rem; margin-top: 5px; min-height: 1.2em; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="clickable-text" onclick="checkStatus()">lebt Reinhold Würth noch?</div>
+    
+    <img id="status-image" src="leiche.jpg" alt="Status">
+
+    <div id="result"></div>
+    <div id="date-info" class="date-info"></div>
+</div>
+
+<script>
+    async function checkStatus() {
+        const img = document.getElementById('status-image');
+        const resultDiv = document.getElementById('result');
+        const dateInfo = document.getElementById('date-info');
+        
+        // Reset
+        resultDiv.innerText = "";
+        dateInfo.innerText = "";
+        
+        // Starte Drehung
+        img.style.transform = "rotate(0deg)"; 
+        img.classList.add("rotating");
+
+        const url = `https://de.wikipedia.org/w/api.php?action=parse&page=Reinhold_Würth&prop=wikitext&format=json&origin=*`;
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            // Kleiner Timeout, damit man die Drehung mindestens kurz sieht, 
+            // auch wenn die API extrem schnell antwortet
+            setTimeout(() => {
+                const wikitext = data.parse.wikitext["*"];
+                const deathMatch = wikitext.match(/STERBEDATUM\s*=\s*([^|}\n]+)/i);
+                const deathDate = deathMatch ? deathMatch[1].trim() : "";
+
+                // Animation stoppen durch Entfernen der Klasse
+                img.classList.remove("rotating");
+
+                if (deathDate !== "") {
+                    // TOT -> Normal (0 Grad)
+                    img.style.transform = "rotate(0deg)";
+                    resultDiv.innerText = "zum Glück nicht mehr";
+                    resultDiv.style.color = "#e74c3c";
+                    dateInfo.innerText = "Verstorben am: " + deathDate;
+                } else {
+                    // LEBT NOCH -> Kopf (180 Grad)
+                    img.style.transform = "rotate(180deg)";
+                    resultDiv.innerText = "leider ja";
+                    resultDiv.style.color = "#27ae60";
+                    dateInfo.innerText = "Kein Sterbedatum gefunden.";
+                }
+            }, 500); // 500ms Mindestdrehzeit
+
+        } catch (error) {
+            img.classList.remove("rotating");
+            resultDiv.innerText = "Fehler bei der Abfrage";
+        }
+    }
+</script>
+
+</body>
+</html>
